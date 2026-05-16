@@ -138,12 +138,9 @@ public class ArcaneHourglassStaffItem extends Item {
     }
 
     private static void castBlinkStep(ServerLevel level, Player player) {
-        Vec3 look = player.getLookAngle().normalize();
         Vec3 destination = findSafeTeleportPosition(level, player, 7.0D);
         if (destination == null) {
-            player.sendSystemMessage(Component.translatable("message.tutorialmod.spell_blocked").withStyle(ChatFormatting.RED));
-            level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 1.0D, player.getZ(), 10, 0.25D, 0.35D, 0.25D, 0.01D);
-            return;
+            destination = player.position();
         }
 
         level.sendParticles(ParticleTypes.PORTAL, player.getX(), player.getY() + 1.0D, player.getZ(), 24, 0.35D, 0.7D, 0.35D, 0.04D);

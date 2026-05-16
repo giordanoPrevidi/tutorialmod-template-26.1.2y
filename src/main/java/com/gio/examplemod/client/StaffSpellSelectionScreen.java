@@ -10,6 +10,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -55,6 +56,16 @@ public class StaffSpellSelectionScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.isEscape()) {
+            Minecraft.getInstance().setScreen(null);
+            return true;
+        }
+
+        return super.keyPressed(event);
     }
 
     @Override

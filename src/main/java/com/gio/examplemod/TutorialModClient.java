@@ -18,6 +18,8 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -42,6 +44,20 @@ public class TutorialModClient {
             new KeyMapping("key.tutorialmod.select_bone_minion", InputConstants.KEY_K, CATEGORY),
             new KeyMapping("key.tutorialmod.select_grave_mist", InputConstants.KEY_L, CATEGORY)
     };
+    private static final KeyMapping[] CTRL_SELECT_SPELL_KEYS = {
+            ctrlSpellKey("key.tutorialmod.select_arcane_fire_ctrl", InputConstants.KEY_1),
+            ctrlSpellKey("key.tutorialmod.select_wind_burst_ctrl", InputConstants.KEY_2),
+            ctrlSpellKey("key.tutorialmod.select_healing_light_ctrl", InputConstants.KEY_3),
+            ctrlSpellKey("key.tutorialmod.select_blink_step_ctrl", InputConstants.KEY_4),
+            ctrlSpellKey("key.tutorialmod.select_storm_lance_ctrl", InputConstants.KEY_5),
+            ctrlSpellKey("key.tutorialmod.select_frost_bind_ctrl", InputConstants.KEY_6),
+            ctrlSpellKey("key.tutorialmod.select_earthen_guard_ctrl", InputConstants.KEY_7),
+            ctrlSpellKey("key.tutorialmod.select_solar_flare_ctrl", InputConstants.KEY_8),
+            ctrlSpellKey("key.tutorialmod.select_wither_touch_ctrl", InputConstants.KEY_9),
+            ctrlSpellKey("key.tutorialmod.select_soul_drain_ctrl", InputConstants.KEY_0),
+            ctrlSpellKey("key.tutorialmod.select_bone_minion_ctrl", InputConstants.KEY_MINUS),
+            ctrlSpellKey("key.tutorialmod.select_grave_mist_ctrl", InputConstants.KEY_EQUALS)
+    };
 
     public TutorialModClient(ModContainer container) {
         // Allows NeoForge to create a config screen for this mod's configs.
@@ -64,6 +80,9 @@ public class TutorialModClient {
         for (KeyMapping keyMapping : SELECT_SPELL_KEYS) {
             event.register(keyMapping);
         }
+        for (KeyMapping keyMapping : CTRL_SELECT_SPELL_KEYS) {
+            event.register(keyMapping);
+        }
     }
 
     static void onKeyInput(InputEvent.Key event) {
@@ -82,5 +101,22 @@ public class TutorialModClient {
                 ClientPacketDistributor.sendToServer(new SelectStaffSpellPayload(spells[i].ordinal()));
             }
         }
+
+        for (int i = 0; i < CTRL_SELECT_SPELL_KEYS.length && i < spells.length; i++) {
+            while (CTRL_SELECT_SPELL_KEYS[i].consumeClick()) {
+                ClientPacketDistributor.sendToServer(new SelectStaffSpellPayload(spells[i].ordinal()));
+            }
+        }
+    }
+
+    private static KeyMapping ctrlSpellKey(String translationKey, int keyCode) {
+        return new KeyMapping(
+                translationKey,
+                KeyConflictContext.IN_GAME,
+                KeyModifier.CONTROL,
+                InputConstants.Type.KEYSYM,
+                keyCode,
+                CATEGORY
+        );
     }
 }
