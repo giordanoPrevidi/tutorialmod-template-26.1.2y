@@ -1,25 +1,54 @@
 package com.gio.examplemod;
 
+import com.gio.examplemod.client.StaffSpellSelectionScreen;
+import com.gio.examplemod.magic.MagicSpell;
+import com.gio.examplemod.network.SelectStaffSpellPayload;
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.common.NeoForge;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
 @Mod(value = TutorialMod.MODID, dist = Dist.CLIENT)
 // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
 @EventBusSubscriber(modid = TutorialMod.MODID, value = Dist.CLIENT)
 public class TutorialModClient {
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(TutorialMod.MODID, "key"));
+    private static final KeyMapping OPEN_SPELL_MENU = new KeyMapping("key.tutorialmod.open_spell_menu", InputConstants.KEY_R, CATEGORY);
+    private static final KeyMapping[] SELECT_SPELL_KEYS = {
+            new KeyMapping("key.tutorialmod.select_arcane_fire", InputConstants.KEY_Z, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_wind_burst", InputConstants.KEY_X, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_healing_light", InputConstants.KEY_C, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_blink_step", InputConstants.KEY_V, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_storm_lance", InputConstants.KEY_B, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_frost_bind", InputConstants.KEY_N, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_earthen_guard", InputConstants.KEY_M, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_solar_flare", InputConstants.KEY_G, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_wither_touch", InputConstants.KEY_H, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_soul_drain", InputConstants.KEY_J, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_bone_minion", InputConstants.KEY_K, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_grave_mist", InputConstants.KEY_L, CATEGORY)
+    };
+
     public TutorialModClient(ModContainer container) {
         // Allows NeoForge to create a config screen for this mod's configs.
         // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
         // Do not forget to add translations for your config options to the en_us.json file.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        NeoForge.EVENT_BUS.addListener(TutorialModClient::onKeyInput);
     }
 
     @SubscribeEvent
@@ -27,5 +56,31 @@ public class TutorialModClient {
         // Some client setup code
         TutorialMod.LOGGER.info("HELLO FROM CLIENT SETUP");
         TutorialMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+    }
+
+    @SubscribeEvent
+    static void registerKeyMappings(RegisterKeyMappingsEvent event) {
+        event.register(OPEN_SPELL_MENU);
+        for (KeyMapping keyMapping : SELECT_SPELL_KEYS) {
+            event.register(keyMapping);
+        }
+    }
+
+    static void onKeyInput(InputEvent.Key event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.screen != null) {
+            return;
+        }
+
+        while (OPEN_SPELL_MENU.consumeClick()) {
+            minecraft.setScreen(new StaffSpellSelectionScreen());
+        }
+
+        MagicSpell[] spells = MagicSpell.values();
+        for (int i = 0; i < SELECT_SPELL_KEYS.length && i < spells.length; i++) {
+            while (SELECT_SPELL_KEYS[i].consumeClick()) {
+                ClientPacketDistributor.sendToServer(new SelectStaffSpellPayload(spells[i].ordinal()));
+            }
+        }
     }
 }
