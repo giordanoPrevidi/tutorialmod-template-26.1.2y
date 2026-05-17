@@ -3,8 +3,19 @@ package com.gio.examplemod;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
+import com.gio.examplemod.item.ArtemisBowItem;
 import com.gio.examplemod.item.ArcaneHourglassStaffItem;
+import com.gio.examplemod.item.DivineTuningRodItem;
+import com.gio.examplemod.item.EirScepterItem;
+import com.gio.examplemod.item.MjolnirItem;
+import com.gio.examplemod.network.CastTalentPayload;
+import com.gio.examplemod.network.CastUltimateTalentPayload;
+import com.gio.examplemod.network.ChooseClassPayload;
+import com.gio.examplemod.network.SelectActiveTalentPayload;
 import com.gio.examplemod.network.SelectStaffSpellPayload;
+import com.gio.examplemod.network.SyncProgressionPayload;
+import com.gio.examplemod.network.UnlockTalentPayload;
+import com.gio.examplemod.progression.ProgressionEvents;
 
 
 import net.neoforged.bus.api.IEventBus;
@@ -46,12 +57,55 @@ public class TutorialMod {
                     .fireResistant())
     );
 
+    public static final DeferredItem<Item> DIVINE_TUNING_ROD = ITEMS.registerItem(
+            "divine_tuning_rod",
+            properties -> new DivineTuningRodItem(properties
+                    .stacksTo(1)
+                    .rarity(Rarity.EPIC)
+                    .fireResistant())
+    );
+
+    public static final DeferredItem<Item> MJOLNIR = ITEMS.registerItem(
+            "mjolnir",
+            properties -> new MjolnirItem(properties
+                    .sword(ToolMaterial.NETHERITE, 7.0F, -3.3F)
+                    .rarity(Rarity.EPIC)
+                    .fireResistant()
+                    .stacksTo(1)
+                    .durability(1200))
+    );
+
+    public static final DeferredItem<Item> EIR_SCEPTER = ITEMS.registerItem(
+            "eir_scepter",
+            properties -> new EirScepterItem(properties
+                    .sword(ToolMaterial.GOLD, 1.0F, -2.0F)
+                    .rarity(Rarity.EPIC)
+                    .fireResistant()
+                    .stacksTo(1)
+                    .durability(900))
+    );
+
+    public static final DeferredItem<Item> ARTEMIS_BOW = ITEMS.registerItem(
+            "artemis_bow",
+            properties -> new ArtemisBowItem(properties
+                    .rarity(Rarity.EPIC)
+                    .fireResistant()
+                    .stacksTo(1)
+                    .durability(1200))
+    );
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TUTORIAL_TAB = CREATIVE_MODE_TABS.register(
             "tutorialmod_tab",
             () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
                     .title(Component.translatable("itemGroup.tutorialmod"))
                     .icon(() -> new ItemStack(ARCANE_HOURGLASS_STAFF.get()))
-                    .displayItems((parameters, output) -> output.accept(ARCANE_HOURGLASS_STAFF.get()))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ARCANE_HOURGLASS_STAFF.get());
+                        output.accept(DIVINE_TUNING_ROD.get());
+                        output.accept(MJOLNIR.get());
+                        output.accept(EIR_SCEPTER.get());
+                        output.accept(ARTEMIS_BOW.get());
+                    })
                     .build()
     );
 
@@ -69,6 +123,7 @@ public class TutorialMod {
         // Note that this is necessary if and only if we want *this* class (TutorialMod) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(new ProgressionEvents());
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -80,7 +135,13 @@ public class TutorialMod {
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar(MODID)
-                .playToServer(SelectStaffSpellPayload.TYPE, SelectStaffSpellPayload.STREAM_CODEC, SelectStaffSpellPayload::handle);
+                .playToServer(SelectStaffSpellPayload.TYPE, SelectStaffSpellPayload.STREAM_CODEC, SelectStaffSpellPayload::handle)
+                .playToServer(ChooseClassPayload.TYPE, ChooseClassPayload.STREAM_CODEC, ChooseClassPayload::handle)
+                .playToServer(UnlockTalentPayload.TYPE, UnlockTalentPayload.STREAM_CODEC, UnlockTalentPayload::handle)
+                .playToServer(SelectActiveTalentPayload.TYPE, SelectActiveTalentPayload.STREAM_CODEC, SelectActiveTalentPayload::handle)
+                .playToServer(CastTalentPayload.TYPE, CastTalentPayload.STREAM_CODEC, CastTalentPayload::handle)
+                .playToServer(CastUltimateTalentPayload.TYPE, CastUltimateTalentPayload.STREAM_CODEC, CastUltimateTalentPayload::handle)
+                .playToClient(SyncProgressionPayload.TYPE, SyncProgressionPayload.STREAM_CODEC);
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

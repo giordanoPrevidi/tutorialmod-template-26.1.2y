@@ -12,7 +12,7 @@ public enum MagicSpell {
     STORM_LANCE("B"),
     FROST_BIND("N"),
     EARTHEN_GUARD("M"),
-    SOLAR_FLARE("G"),
+    SOLAR_FLARE("Y"),
     WITHER_TOUCH("H"),
     SOUL_DRAIN("J"),
     BONE_MINION("K"),

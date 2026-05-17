@@ -1,8 +1,14 @@
 package com.gio.examplemod;
 
+import com.gio.examplemod.client.ClientProgressionPayloadHandler;
 import com.gio.examplemod.client.StaffSpellSelectionScreen;
+import com.gio.examplemod.client.TalentHudOverlay;
+import com.gio.examplemod.client.TalentTreeScreen;
 import com.gio.examplemod.magic.MagicSpell;
+import com.gio.examplemod.network.CastTalentPayload;
+import com.gio.examplemod.network.CastUltimateTalentPayload;
 import com.gio.examplemod.network.SelectStaffSpellPayload;
+import com.gio.examplemod.network.SyncProgressionPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.Minecraft;
@@ -15,9 +21,12 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyModifier;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -30,6 +39,9 @@ import net.neoforged.neoforge.common.NeoForge;
 public class TutorialModClient {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(TutorialMod.MODID, "key"));
     private static final KeyMapping OPEN_SPELL_MENU = new KeyMapping("key.tutorialmod.open_spell_menu", InputConstants.KEY_R, CATEGORY);
+    private static final KeyMapping OPEN_TALENT_MENU = new KeyMapping("key.tutorialmod.open_talent_menu", InputConstants.KEY_O, CATEGORY);
+    private static final KeyMapping CAST_ACTIVE_TALENT = new KeyMapping("key.tutorialmod.cast_active_talent", InputConstants.KEY_F, CATEGORY);
+    private static final KeyMapping CAST_ULTIMATE_TALENT = new KeyMapping("key.tutorialmod.cast_ultimate_talent", InputConstants.KEY_G, CATEGORY);
     private static final KeyMapping[] SELECT_SPELL_KEYS = {
             new KeyMapping("key.tutorialmod.select_arcane_fire", InputConstants.KEY_Z, CATEGORY),
             new KeyMapping("key.tutorialmod.select_wind_burst", InputConstants.KEY_X, CATEGORY),
@@ -38,7 +50,7 @@ public class TutorialModClient {
             new KeyMapping("key.tutorialmod.select_storm_lance", InputConstants.KEY_B, CATEGORY),
             new KeyMapping("key.tutorialmod.select_frost_bind", InputConstants.KEY_N, CATEGORY),
             new KeyMapping("key.tutorialmod.select_earthen_guard", InputConstants.KEY_M, CATEGORY),
-            new KeyMapping("key.tutorialmod.select_solar_flare", InputConstants.KEY_G, CATEGORY),
+            new KeyMapping("key.tutorialmod.select_solar_flare", InputConstants.KEY_Y, CATEGORY),
             new KeyMapping("key.tutorialmod.select_wither_touch", InputConstants.KEY_H, CATEGORY),
             new KeyMapping("key.tutorialmod.select_soul_drain", InputConstants.KEY_J, CATEGORY),
             new KeyMapping("key.tutorialmod.select_bone_minion", InputConstants.KEY_K, CATEGORY),
@@ -77,12 +89,25 @@ public class TutorialModClient {
     @SubscribeEvent
     static void registerKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(OPEN_SPELL_MENU);
+        event.register(OPEN_TALENT_MENU);
+        event.register(CAST_ACTIVE_TALENT);
+        event.register(CAST_ULTIMATE_TALENT);
         for (KeyMapping keyMapping : SELECT_SPELL_KEYS) {
             event.register(keyMapping);
         }
         for (KeyMapping keyMapping : CTRL_SELECT_SPELL_KEYS) {
             event.register(keyMapping);
         }
+    }
+
+    @SubscribeEvent
+    static void registerGuiLayers(RegisterGuiLayersEvent event) {
+        event.registerAbove(VanillaGuiLayers.HOTBAR, Identifier.fromNamespaceAndPath(TutorialMod.MODID, "talent_hud"), (extractor, deltaTracker) -> TalentHudOverlay.render(extractor));
+    }
+
+    @SubscribeEvent
+    static void registerClientPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
+        event.register(SyncProgressionPayload.TYPE, ClientProgressionPayloadHandler::handle);
     }
 
     static void onKeyInput(InputEvent.Key event) {
@@ -93,6 +118,18 @@ public class TutorialModClient {
 
         while (OPEN_SPELL_MENU.consumeClick()) {
             minecraft.setScreen(new StaffSpellSelectionScreen());
+        }
+
+        while (OPEN_TALENT_MENU.consumeClick()) {
+            minecraft.setScreen(new TalentTreeScreen());
+        }
+
+        while (CAST_ACTIVE_TALENT.consumeClick()) {
+            ClientPacketDistributor.sendToServer(new CastTalentPayload());
+        }
+
+        while (CAST_ULTIMATE_TALENT.consumeClick()) {
+            ClientPacketDistributor.sendToServer(new CastUltimateTalentPayload());
         }
 
         MagicSpell[] spells = MagicSpell.values();
