@@ -4,6 +4,7 @@ import com.gio.examplemod.client.ClientProgressionPayloadHandler;
 import com.gio.examplemod.client.StaffSpellSelectionScreen;
 import com.gio.examplemod.client.TalentHudOverlay;
 import com.gio.examplemod.client.TalentTreeScreen;
+import com.gio.examplemod.client.ZombieBruteRenderer;
 import com.gio.examplemod.magic.MagicSpell;
 import com.gio.examplemod.network.CastTalentPayload;
 import com.gio.examplemod.network.CastUltimateTalentPayload;
@@ -23,6 +24,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -108,6 +110,11 @@ public class TutorialModClient {
     @SubscribeEvent
     static void registerClientPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
         event.register(SyncProgressionPayload.TYPE, ClientProgressionPayloadHandler::handle);
+    }
+
+    @SubscribeEvent
+    static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(TutorialMod.ZOMBIE_BRUTE.get(), ZombieBruteRenderer::new);
     }
 
     static void onKeyInput(InputEvent.Key event) {

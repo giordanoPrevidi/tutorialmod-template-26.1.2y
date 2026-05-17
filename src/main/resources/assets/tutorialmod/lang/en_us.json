@@ -3,6 +3,8 @@
   "block.tutorialmod.example_block": "Example Block",
   "item.tutorialmod.example_item": "Example Item",
   "item.tutorialmod.arcane_hourglass_staff": "Arcane Hourglass Staff",
+  "item.tutorialmod.zombie_brute_spawn_egg": "Zombie Brute Spawn Egg",
+  "entity.tutorialmod.zombie_brute": "Zombie Brute",
   "item.tutorialmod.arcane_hourglass_staff.tooltip": "Selected spell: %s",
   "item.tutorialmod.divine_tuning_rod": "Divine Tuning Rod",
   "item.tutorialmod.mjolnir": "Mjolnir",

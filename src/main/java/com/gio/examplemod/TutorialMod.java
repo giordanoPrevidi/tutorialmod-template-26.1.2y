@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 import com.gio.examplemod.item.ArtemisBowItem;
 import com.gio.examplemod.item.ArcaneHourglassStaffItem;
+import com.gio.examplemod.entity.ZombieBruteEntity;
 import com.gio.examplemod.item.DivineTuningRodItem;
 import com.gio.examplemod.item.EirScepterItem;
 import com.gio.examplemod.item.MjolnirItem;
@@ -26,13 +27,17 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.ToolMaterial;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -47,7 +52,21 @@ public class TutorialMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
+    public static final DeferredRegister.Entities ENTITIES = DeferredRegister.createEntities(MODID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ZombieBruteEntity>> ZOMBIE_BRUTE = ENTITIES.registerEntityType(
+            "zombie_brute",
+            ZombieBruteEntity::new,
+            MobCategory.MONSTER,
+            builder -> builder
+                    .sized(0.9F, 2.925F)
+                    .eyeHeight(2.61F)
+                    .passengerAttachments(3.01875F)
+                    .ridingOffset(-1.05F)
+                    .clientTrackingRange(8)
+                    .notInPeaceful()
+    );
 
     public static final DeferredItem<Item> ARCANE_HOURGLASS_STAFF = ITEMS.registerItem(
             "arcane_hourglass_staff",
@@ -94,6 +113,11 @@ public class TutorialMod {
                     .durability(1200))
     );
 
+    public static final DeferredItem<Item> ZOMBIE_BRUTE_SPAWN_EGG = ITEMS.registerItem(
+            "zombie_brute_spawn_egg",
+            properties -> new SpawnEggItem(properties.spawnEgg(ZOMBIE_BRUTE.get()))
+    );
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TUTORIAL_TAB = CREATIVE_MODE_TABS.register(
             "tutorialmod_tab",
             () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
@@ -105,6 +129,7 @@ public class TutorialMod {
                         output.accept(MJOLNIR.get());
                         output.accept(EIR_SCEPTER.get());
                         output.accept(ARTEMIS_BOW.get());
+                        output.accept(ZOMBIE_BRUTE_SPAWN_EGG.get());
                     })
                     .build()
     );
@@ -113,11 +138,13 @@ public class TutorialMod {
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public TutorialMod(IEventBus modEventBus, ModContainer modContainer) {
         ITEMS.register(modEventBus);
+        ENTITIES.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::registerPayloads);
+        modEventBus.addListener(this::registerEntityAttributes);
 
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (TutorialMod) to respond directly to events.
@@ -142,6 +169,10 @@ public class TutorialMod {
                 .playToServer(CastTalentPayload.TYPE, CastTalentPayload.STREAM_CODEC, CastTalentPayload::handle)
                 .playToServer(CastUltimateTalentPayload.TYPE, CastUltimateTalentPayload.STREAM_CODEC, CastUltimateTalentPayload::handle)
                 .playToClient(SyncProgressionPayload.TYPE, SyncProgressionPayload.STREAM_CODEC);
+    }
+
+    private void registerEntityAttributes(EntityAttributeCreationEvent event) {
+        event.put(ZOMBIE_BRUTE.get(), ZombieBruteEntity.createAttributes().build());
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
